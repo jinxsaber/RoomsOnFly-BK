@@ -46,7 +46,7 @@ const postRegister = async (req,res) => {
 }
 
 const getLogin = async (req,res) => {
-    const {email,password} = req.body;
+    const {email,password} = req.query;
 
     try{
         const creds = await User.findOne({email});
