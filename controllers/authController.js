@@ -45,7 +45,7 @@ const postRegister = async (req,res) => {
   }
 }
 
-const getLogin = async (req,res) => {
+const postLogin = async (req,res) => {
     const {email,password} = req.query;
 
     try{
@@ -71,9 +71,6 @@ const logout = (req,res) => {
     res.status(200).json("Log Out Successful")
 }
 
-const postLogin = (req,res) => {
-    console.log(req,res);
-}
 
 module.exports = {
     getRegister,
