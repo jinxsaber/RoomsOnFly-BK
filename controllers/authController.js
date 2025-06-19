@@ -1,76 +1,102 @@
-const User = require('../model/user')
-const bcrypt = require('bcrypt')
-
+const User = require('../model/user');
+const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
-const getRegister = (req,res) =>{
-    console.log('Got Signup');
-}
-
-
+// Create JWT
 const createToken = (id) => {
-    return jwt.sign({id},process.env.JWT,{
-        expiresIn : '30d'
-    })
-}
+    return jwt.sign({ id }, process.env.JWT, {
+        expiresIn: '30d'
+    });
+};
 
-const postRegister = async (req,res) => {
-    const {name,email,password} = req.body;
-    if(password.length < 8){
-            res.status(400).json('Minimum 8 characters');
-            return;
+// GET /register (for testing)
+const getRegister = (req, res) => {
+    console.log('Got Signup');
+    res.send('Register route');
+};
+
+// POST /register
+const postRegister = async (req, res) => {
+    const { name, email, password } = req.body;
+
+    if (password.length < 8) {
+        return res.status(400).json({ error: 'Password must be at least 8 characters long.' });
     }
-    try{
-        const hash = await bcrypt.hash(password,12);
-        const userData = await User.create({name,email,password:hash});
-        const token = createToken(userData._id);
-        res.cookie('jwt', token, { httpOnly: true, maxAge: 30 * 24 * 60 * 60 * 1000 });
-
-        res.status(200).json({userData});
-    }
-    catch (error){
-        console.log(error);
-          if(error.code === 11000){
-            // console.log(error);
-            res.status(400).json('Already Registered')
-          }
-          if (error.name === 'ValidationError') {
-            // const errors = {};
-            // Object.values(error.errors).forEach(({ properties }) => {
-            //     errors[properties.path] = properties.message;
-            // });
-            console.log('Validation Errors:');
-            return res.status(400).json('Invalid Email');
-        }
-  }
-}
-
-const postLogin = async (req,res) => {
-    const {email,password} = req.body;
 
     try {
-        const creds = await User.findOne({email});
-        if (creds) {
-            const auth = await bcrypt.compare(password, creds.password);
-            if (auth) {
-                const token = createToken(creds._id);
-                res.status(200).json({ token, user: creds });
-                return;
-            }
-            throw new Error('Incorrect Password');
+        const hash = await bcrypt.hash(password, 12);
+        const user = await User.create({ name, email, password: hash });
+
+        const token = createToken(user._id);
+
+        res.cookie('jwt', token, {
+            httpOnly: true,
+            secure: true,
+            sameSite: 'None',
+            maxAge: 30 * 24 * 60 * 60 * 1000
+        });
+
+        res.status(200).json({
+            user: { _id: user._id, name: user.name, email: user.email },
+            token
+        });
+    } catch (error) {
+        console.error(error);
+        if (error.code === 11000) {
+            return res.status(400).json({ error: 'Email already registered.' });
         }
-        throw new Error('Incorrect Email');
+
+        if (error.name === 'ValidationError') {
+            return res.status(400).json({ error: 'Invalid email format.' });
+        }
+
+        res.status(500).json({ error: 'Registration failed.' });
+    }
+};
+
+// POST /login
+const postLogin = async (req, res) => {
+    const { email, password } = req.body;
+
+    try {
+        const user = await User.findOne({ email });
+
+        if (!user) throw new Error('Incorrect Email');
+
+        const auth = await bcrypt.compare(password, user.password);
+
+        if (!auth) throw new Error('Incorrect Password');
+
+        const token = createToken(user._id);
+
+        res.cookie('jwt', token, {
+            httpOnly: true,
+            secure: true,
+            sameSite: 'None',
+            maxAge: 30 * 24 * 60 * 60 * 1000
+        });
+
+        res.status(200).json({
+            user: { _id: user._id, name: user.name, email: user.email },
+            token
+        });
     } catch (err) {
         res.status(400).json({ error: err.message });
     }
 };
 
+// GET /logout
+const logout = (req, res) => {
+    res.cookie('jwt', '', {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'None',
+        maxAge: 1
+    });
+    res.status(200).json({ message: "Logout successful" });
+};
 
-const logout = (req,res) => {
-    res.cookie('jwt','',{maxAge : 1});
-    res.status(200).json("Log Out Successful")
-}
-
+// POST /verify
 const verify = async (req, res) => {
     const authHeader = req.headers.authorization;
 
@@ -83,6 +109,7 @@ const verify = async (req, res) => {
     try {
         const decoded = jwt.verify(token, process.env.JWT);
         const user = await User.findById(decoded.id).select('-password');
+
         if (!user) return res.status(404).json({ error: 'User not found' });
 
         res.status(200).json({ user });
@@ -92,11 +119,10 @@ const verify = async (req, res) => {
     }
 };
 
-
 module.exports = {
     getRegister,
     postRegister,
     postLogin,
     logout,
     verify
-}
+};
