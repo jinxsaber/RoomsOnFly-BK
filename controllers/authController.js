@@ -48,33 +48,55 @@ const postRegister = async (req,res) => {
 const postLogin = async (req,res) => {
     const {email,password} = req.body;
 
-    try{
+    try {
         const creds = await User.findOne({email});
-        if(creds){
-            const auth = await bcrypt.compare(password,creds.password);
-            if(auth){
-                res.status(200).json(creds);
+        if (creds) {
+            const auth = await bcrypt.compare(password, creds.password);
+            if (auth) {
+                const token = createToken(creds._id);
+                res.status(200).json({ token, user: creds });
                 return;
             }
-            throw new Error ('Incorrect Password');
+            throw new Error('Incorrect Password');
         }
-        throw new Error('Incorrect mail');
+        throw new Error('Incorrect Email');
+    } catch (err) {
+        res.status(400).json({ error: err.message });
     }
-    catch(err){
-        res.status(400).json({error:err.message})
-    }
-    
-}
+};
+
 
 const logout = (req,res) => {
     res.cookie('jwt','',{maxAge : 1});
     res.status(200).json("Log Out Successful")
 }
 
+const verify = async (req, res) => {
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const token = authHeader.split(' ')[1];
+
+    try {
+        const decoded = jwt.verify(token, process.env.JWT);
+        const user = await User.findById(decoded.id).select('-password');
+        if (!user) return res.status(404).json({ error: 'User not found' });
+
+        res.status(200).json({ user });
+    } catch (err) {
+        console.error(err);
+        res.status(401).json({ error: 'Invalid token' });
+    }
+};
+
 
 module.exports = {
     getRegister,
     postRegister,
     postLogin,
-    logout
+    logout,
+    verify
 }
