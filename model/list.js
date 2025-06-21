@@ -2,34 +2,77 @@ const mongoose = require('mongoose')
 
 
 const listSchema = new mongoose.Schema({
-    name:{
-        type : String,
-        required:true,
+    name: {
+    type: String,
+    required: true
+  },
+  location: {
+    type: String,
+    required: true
+  },
+  rating: {
+    type: Number,
+    required: true,
+    min: 0,
+    max: 5
+  },
+  reviews: {
+    type: Number,
+    required: true,
+    min: 0
+  },
+  price_per_night: {
+    type: Number,
+    required: true
+  },
+  details: {
+    guests: {
+      type: Number,
+      required: true,
+      min: 1
     },
-    location:{
-        type : String,
-        required:true,
+    bedrooms: {
+      type: Number,
+      required: true,
+      min: 0
     },
-    host : {
-        type:String,
-        required:true
+    bathrooms: {
+      type: Number,
+      required: true,
+      min: 0
     },
-    rate : {
-        type:Number,
-        required:true
+    dedicated_workspace: {
+      type: Boolean,
+      required: true
     },
-    availability : {
-        type:Boolean,
+    self_checkin: {
+      type: Boolean,
+      required: true
     },
-    features : {
-        type: String,
-        required:true
-    },
-    about : {
-        type:String,
-        minLength : 20
+    free_cancellation: {
+      type: Boolean,
+      required: true
     }
-})
+  },
+  host: {
+    name: {
+      type: String,
+      required: true
+    },
+    joined: {
+      type: String,
+      required: true
+    }
+  },
+  description: {
+    type: String,
+    required: true
+  },
+  images: {
+    type: [String],
+    required: true
+  }
+});
 
 const List = mongoose.model('list',listSchema);
 

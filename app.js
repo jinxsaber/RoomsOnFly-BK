@@ -7,6 +7,7 @@ const app = express();
 
 const user = require('./routes/authRoutes')
 const list = require('./routes/listRoutes')
+// const booking = require('./routes/bookingRoutes')
 
 app.use(cors({
   origin:true,
