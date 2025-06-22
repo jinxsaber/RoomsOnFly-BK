@@ -18,6 +18,10 @@ const bookingSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Hotel',
         required: true
+    },
+    guests:{
+        type:Number,
+        required:true
     }
 }, { timestamps: true });
 

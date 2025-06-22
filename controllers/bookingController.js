@@ -3,13 +3,14 @@ const mongoose = require('mongoose')
 
 const postBooking = async (req, res) => {
     try{
-        const {userId,from,to,hotelId} = req.body;
+        const {userId,from,to,hotelId, guests} = req.body;
 
         const newBooking = await Booking.create({
             userId,
             from,
             to,
-            hotelId
+            hotelId,
+            guests
         })
         res.status(200).json(newBooking);
     }
